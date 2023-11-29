@@ -162,9 +162,15 @@ namespace testTaskManagement.Controllers
         [HttpPost]
         public async Task<IActionResult> loginUser( [FromBody] Users users)
         {
+            
            
-            var row = await _dataContext.UserModales.Where(user => user.userName == users.userName && user.hashedPassword == users.password).FirstOrDefaultAsync();
-         return   row == null ? Unauthorized() : Ok(row);
+            var getUserByUserName = await _dataContext.UserModales.Where(user => user.userName == users.userName  ).FirstOrDefaultAsync();
+            if (getUserByUserName == null)
+                return NotFound("Username not exist");
+            bool validatePassword = BCrypt.Net.BCrypt.Verify(users.password, getUserByUserName.hashedPassword);
+            
+         return   validatePassword ? Ok(new { Message = "Logged In Successfully, ", Username = getUserByUserName.userName, UserId = getUserByUserName.userId}) : Unauthorized("Invalid Password");
+
 
 
         }
@@ -178,13 +184,15 @@ namespace testTaskManagement.Controllers
        if (isExist)
        {
            return Unauthorized("Username exist there");
-       }   
+       }
+
+       String encryptedPassword = BCrypt.Net.BCrypt.HashPassword(user.password);
             
             var userData = new UsersModal
             {
                 userId = Guid.NewGuid(),
                 userName = user.userName,
-                hashedPassword = user.password
+                hashedPassword = encryptedPassword
             };
          await   dc.UserModales.AddAsync(userData);
          await   dc.SaveChangesAsync();
