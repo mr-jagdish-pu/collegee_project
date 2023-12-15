@@ -12,6 +12,6 @@ public class UsersModal
    [Required]
    [MaxLength(255)] // Adjust the maximum length as needed
   
-   public String  userName { get; set; }
+   public String  username { get; set; }
    public String hashedPassword { get; set; }
 }

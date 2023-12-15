@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Runtime.InteropServices.JavaScript;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using System.Text.Json.Nodes;
@@ -34,6 +35,7 @@ namespace testTaskManagement.Controllers
         [HttpGet("taskId")]
         public async Task<IActionResult> GetAllTaskOfUser(Guid UserId)
         {
+            
             var a = await _dataContext.UserModales.FindAsync
                 (UserId);
             if (a == null)
@@ -45,7 +47,7 @@ namespace testTaskManagement.Controllers
 
             List<TasksModal> allUserTask =
                 await _dataContext.TasksModals.Where(task => task.userId == UserId).ToListAsync();
-            return allUserTask.Count > 0 ? Ok(allUserTask) : NotFound();
+            return allUserTask.Count > 0 ? Ok(allUserTask) : NotFound("No data available");
 
 
 
@@ -59,6 +61,8 @@ namespace testTaskManagement.Controllers
 
         public async Task<IActionResult> AddTask([FromBody] Tasks taskModel)
         {
+         
+                
             //to check if userid exist or not
             var requesterId = taskModel.userId;
             var a = await _dataContext.UserModales.FindAsync
@@ -76,7 +80,9 @@ namespace testTaskManagement.Controllers
             obj.taskId = Guid.NewGuid();
             obj.taskName = taskModel.taskName;
             obj.taskDescription = taskModel.taskDescription;
-            obj.dueDate = taskModel.dueDate;
+            obj.dueDate = taskModel.dueDate.Date;
+            // Console.WriteLine("TODAY IS");
+             Console.WriteLine(obj.dueDate.Date);
             obj.userId = taskModel.userId;
 
 
@@ -105,17 +111,18 @@ namespace testTaskManagement.Controllers
 
             var task = await _dataContext.TasksModals.FindAsync(taskId);
             if (task == null)
-                return NotFound();
+                return NotFound("Not found");
             
       
-            task.userId = task.userId;
+            // task.userId = task.userId;
+            // task.taskId = task.taskId;
             task.taskDescription = taskModel.taskDescription;
             task.taskName = taskModel.taskName;
-            task.dueDate = taskModel.dueDate;
+            task.dueDate = taskModel.dueDate.Date;
             _dataContext.TasksModals.Update(task);
 
             _dataContext.SaveChanges();
-            return Ok();
+            return Ok(task);
 
 
 
@@ -139,7 +146,7 @@ namespace testTaskManagement.Controllers
             var task = await _dataContext.TasksModals.FindAsync(taskId);
 
             if (task == null)
-                return NotFound();
+                return NotFound("not found");
 
             _dataContext.TasksModals.Remove(task);
             await _dataContext.SaveChangesAsync();
@@ -164,12 +171,12 @@ namespace testTaskManagement.Controllers
         {
             
            
-            var getUserByUserName = await _dataContext.UserModales.Where(user => user.userName == users.userName  ).FirstOrDefaultAsync();
+            var getUserByUserName = await _dataContext.UserModales.Where(user => user.username == users.userName  ).FirstOrDefaultAsync();
             if (getUserByUserName == null)
                 return NotFound("Username not exist");
             bool validatePassword = BCrypt.Net.BCrypt.Verify(users.password, getUserByUserName.hashedPassword);
             
-         return   validatePassword ? Ok(new { Message = "Logged In Successfully, ", Username = getUserByUserName.userName, UserId = getUserByUserName.userId}) : Unauthorized("Invalid Password");
+         return   validatePassword ? Ok(new { Message = "Logged In Successfully, ", Username = getUserByUserName.username, UserId = getUserByUserName.userId}) : Unauthorized("Invalid Password");
 
 
 
@@ -180,7 +187,7 @@ namespace testTaskManagement.Controllers
         public async Task<IActionResult> createUser([FromBody] Users user)
         {
          var   dc = _dataContext;
-       var isExist=  await  dc.UserModales.AnyAsync(u => u.userName == user.userName);
+       var isExist=  await  dc.UserModales.AnyAsync(u => u.username == user.userName);
        if (isExist)
        {
            return Unauthorized("Username exist there");
@@ -191,7 +198,7 @@ namespace testTaskManagement.Controllers
             var userData = new UsersModal
             {
                 userId = Guid.NewGuid(),
-                userName = user.userName,
+                username = user.userName,
                 hashedPassword = encryptedPassword
             };
          await   dc.UserModales.AddAsync(userData);

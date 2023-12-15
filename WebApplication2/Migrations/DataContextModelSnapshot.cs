@@ -57,9 +57,10 @@ namespace WebApplication2.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("userName")
+                    b.Property<string>("username")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("userId");
 
